@@ -1,0 +1,9 @@
+{application, ppnl_leden,
+ [
+  {description, "My Nitrogen Web Project"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [kernel, stdlib, nitrogen_core, gen_smtp, epgsql ]},
+  {mod, { ppnl_leden_app, []}},
+  {env, []}
+ ]}.
