@@ -1,5 +1,5 @@
 %% -*- mode: nitrogen -*-
--module (index).
+-module (not_found).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 
@@ -17,9 +17,10 @@ inner_body() ->
         #h1 { text="Welkom bij de Piratenpartij" },
         #p{},
         "
-		Gefeliciteerd, de inlogprocedure werkt.
+		Sorry, die pagina kennen we hier niet.
         ",
-        #p{}
+        #p{},
+	#link{ text = "ga verder", url="/index" }
     ].
 	
 event(click) ->

@@ -25,6 +25,7 @@ handlers() ->
     %% The following enables the debug_crash_handler for development. If you
     %% wish to use the default_crash_handler, which just spits out "Internal
     %% Server Error", comment or delete this next line.
+    nitrogen:handler(security, [] ),
     nitrogen:handler(debug_crash_handler, []),
     ok.
 

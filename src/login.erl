@@ -32,25 +32,33 @@ inner_body() ->
     ].
 	
 event(click1) ->
-    { LidNr, [] } = string:to_integer(wf:q( lidNr )),
-    { _Headers, [ { Voornaam, TussenVoegsel, Achternaam, DbEmail } ] } =  ppdb:query( 
-			"SELECT voornaam, tussenvoegsel, achternaam, email FROM lid where lidnummer = $1;", 
-			[ LidNr ] ),
-    {ok, [{ _, Email_check }]} = smtp_util:parse_rfc822_addresses( wf:q(email) ),
-    {ok, [{ _, Email }]}       = smtp_util:parse_rfc822_addresses( DbEmail ),
-    case Email of
-	Email_check ->
+    try
+	    { LidNr, [] } = string:to_integer(wf:q( lidNr )),
+	    Data = 
+		 { Header, [ Record ] } =  
+			ppdb:query( 
+				"SELECT * FROM lid where lidnummer = $1 and email = $2;", 
+				[ LidNr, wf:q(email) ] ),
+	    UserInfo = ppnl_mail:record_to_env( Header, Record ),
+	    wf:state(userinfo, UserInfo ),
 	    Secret = rand:uniform(987654321),
 	    wf:state(code, Secret ),
-	    sendMail( Voornaam, TussenVoegsel, Achternaam, Email, Secret ),
-	    wf:state(userinfo, { Voornaam, TussenVoegsel, Achternaam, Email } ),
+	    { ok, AfzenderMail } = application:get_env( ppnl_leden, system_mail ),
+	    { ok, Afzendernaam } = application:get_env( ppnl_leden, system_mail_r ),
+	    ppnl_mail:send_template( "priv/templates/login.mail",
+				    Data,
+				    <<"Inloggen Piratenpartij">>,
+				    { Afzendernaam, AfzenderMail },
+				    [ { secret, Secret } ] ),
 	    wf:update( vraag2, [
-	    
-				        #p{ id = vraag2, text = "Wat is de code die je ontvangen hebt in de mail?" },
-					#textbox { id=code, type=number, postback=click2 }
-				] );
-	_ ->   timer:sleep(2000), 
-	       wf:update( vraag2, "Dat email adres kennen we niet van jou" )
+				    #p{ id = vraag2, text = "Wat is de code die je ontvangen hebt in de mail?" },
+			  	    #textbox { id=code, type=number, postback=click2 }
+				] )
+    catch
+	error:{badmatch,X} ->
+		timer:sleep(2000), 
+		io:format("Badmatch ~p~n", [X] ),
+	       	wf:update( vraag2, "Dat email adres kennen we niet van jou" )
     end;
 
 event(click2) ->
@@ -62,33 +70,14 @@ event(click2) ->
 
 
 login_succes() ->
-    { Voornaam, TussenVoegsel, Achternaam, Email } =  wf:state(userinfo),
-    wf:session( voornaam, Voornaam ),
-    wf:session( tussenvoegsel, TussenVoegsel ),
-    wf:session( achternaam, Achternaam ),
-    wf:session( email, Email ),
+    lists:foreach( fun ( { Key, Value } ) -> 
+			wf:session( Key, Value ), 
+			io:format( "~p - ~p: ~p~n", [ Key, Value, wf:session(Key) ] ) 
+		   end, wf:state(userinfo) ),
+    wf:session( user, wf:state(userinfo) ),
     wf:user( wf:q( lidNr ) ),
-    wf:redirect_from_login( "index.html" ).
-
-sendMail( Voornaam, TussenVoegsel, Achternaam, Email, Secret ) ->
-	{ ok, MailConfig } = application:get_env( ppnl_leden, mailconfig ),
-	{ ok, AfzenderMail } = application:get_env( ppnl_leden, system_mail ),
-	{ ok, Afzendernaam } = application:get_env( ppnl_leden, system_mail_r ),
-	{ ok, File } = sgte:compile_file("priv/templates/login.mail"),
-	Message = sgte:render_str( File,  [ { voornaam, Voornaam}, { secret, Secret } ] ),
-	Encoded = mimemail:encode( { <<"text">>, <<"plain">>,                       
-                                     [ { <<"Subject">>, <<"Inloggen Piratenpartij">> },            
-                                       { <<"From">>, smtp_util:combine_rfc822_addresses([ { Afzendernaam, AfzenderMail } ]) },                          
-                                       { <<"To">>, smtp_util:combine_rfc822_addresses([ {Achternaam, Email} ]) } ],                          
-                                     #{},                                           
-                                     unicode:characters_to_binary( Message ) } ),
-	io:format("~p\n ~p\n", [ Encoded, MailConfig ] ),
-	Mr = gen_smtp_client:send_blocking(  { AfzenderMail,
-	                                         [ Email ],
-	                                         Encoded },                              
-					     MailConfig 
-                            ),
-	io:format("resultaat: ~p\n", [Mr]).
+    % Loginpagina is op de originele URL gepresenteerd
+    wf:redirect_from_login( wf_context:uri() ).
 
 
 % Included in template
@@ -99,9 +88,9 @@ redirect() ->
 			    #container_12 { body=[
 			        #grid_8 { alpha=true, prefix=2, suffix=2, omega=true, body= [
 					"Gebruiker ", 
-					wf:session(voornaam), " ",
-					wf:session(tussenvoegsel), " ",
-					wf:session(achternaam), " ",
+					wf:session(naam), " ",
+					" - ",
+					#link{ text = "stuur mail", url = "sendmail" },
 					" - ",
 					#link{ text = "uitloggen", url = "logout" }
 				] }
