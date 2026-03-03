@@ -1,5 +1,5 @@
 -module(ppnl_mail).
--export([ fullname/3, send_template/5, send_text/5, merge/3, record_to_env/2 ]).
+-export([ fullname/3, send_template/5, send_text/5, merge/3, record_to_env/2, test/0 ]).
 
 fullname( A, << "" >>, B ) -> io_lib:format( "~s ~s", [ A, B ] );
 fullname( A, B, C ) -> io_lib:format( "~s ~s ~s", [ A, B, C ] ).
@@ -39,10 +39,19 @@ send_record( Template, Headers, Record, Subject, From, ExtraData ) ->
 	io:format( "~p\n", [ Mime ] ),
 	{ _, FromMail } = From,
 	{ ok, MailConfig } = application:get_env( ppnl_leden, mailconfig ),                                                   
-	gen_smtp_client:send_blocking(  { FromMail,                                                                  
-                                                 [ Email ],                                                                   
-                                                 Mime },                                                                    MailConfig   
-					).
+	gen_smtp_client:send_blocking( { FromMail, [ Email ], Mime }, MailConfig ).
+
+test() ->
+	Mime =  mimemail:encode( { <<"text">>, <<"plain">>,
+				   [ { <<"Subject">>, <<"Testing 123">> },
+				     { <<"From">>, 
+					smtp_util:combine_rfc822_addresses( [ { "frank", "frank87@piratenpartij.nl" } ] ) },
+				     { <<"To">>,
+					smtp_util:combine_rfc822_addresses( [ { "frank", "frank87@xs4all.nl" } ] ) } ],
+				     #{},
+                                     unicode:characters_to_binary( "Test mail-configuratie" ) } ), 
+	{ ok, MailConfig } = application:get_env( ppnl_leden, mailconfig ),                                                   
+	gen_smtp_client:send_blocking( { <<"frank87@piratenpartij.nl">> , [ <<"frank87@xs4all.nl">> ], Mime }, MailConfig ).
 
 merge( [], [], Data ) -> Data;
 merge( D1, [null|D2], Data ) -> merge( D1, [ << "" >>|D2], Data );
