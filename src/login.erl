@@ -6,7 +6,7 @@
 
 main() -> #template { file="./priv/templates/bare.html" }.
 
-title() -> "Welcome to Nitrogen".
+title() -> "Inloggen Piratenpartij".
 
 body() ->
     #container_12 { body=[
@@ -55,9 +55,10 @@ event(click1) ->
 			  	    #textbox { id=code, type=number, postback=click2 }
 				] )
     catch
-	error:{badmatch,X} ->
+	error:{badmatch,X}:St ->
+		[ Location | _ ] = St,
 		timer:sleep(2000), 
-		io:format("Badmatch ~p~n", [X] ),
+		io:format("Badmatch ~p ~p~n", [X, Location] ),
 	       	wf:update( vraag2, "Dat email adres kennen we niet van jou" )
     end;
 

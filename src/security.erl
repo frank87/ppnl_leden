@@ -6,7 +6,7 @@
 ]).
 
 
-init(Config, State) ->
+init(_Config, State) ->
     % By default, let all requests through. If we wanted to impose
     % security, then check the page module (via wf:page_module()),
     % and if the user doesn't have access, then set a new page module and path info,

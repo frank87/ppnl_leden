@@ -5,7 +5,7 @@
 
 main() -> #template { file="./priv/templates/ppnl_leden.html" }.
 
-title() -> "Welcome to Nitrogen".
+title() -> "Welkom bij de Piratenpartij".
 
 body() ->
     #container_12 { body=[
