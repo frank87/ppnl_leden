@@ -1,9 +1,7 @@
 {application, ppnl_leden,
- [
-  {description, "Piratenpartij leden web frontend"},
+ [{description, "Piratenpartij leden web frontend"},
   {vsn, "0.0.0"},
   {registered, []},
-  {applications, [kernel, stdlib, nitrogen_core, gen_smtp, epgsql ]},
-  {mod, { ppnl_leden_app, []}},
-  {env, []}
- ]}.
+  {applications, [kernel, stdlib, nitrogen_core, gen_smtp, epgsql]},
+  {mod, {ppnl_leden_app, []}},
+  {env, []}]}.
