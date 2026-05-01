@@ -7,7 +7,7 @@
 main() -> #template{file = "./priv/templates/ppnl_leden.html"}.
 
 
-title() -> "Doei...".
+title() -> "uitloggen".
 
 
 body() ->

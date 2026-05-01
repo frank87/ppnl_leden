@@ -19,7 +19,6 @@ body() ->
 inner_body() ->
     [#article{
        body = [#html5_header{body = "Mail naar lid"},
-               io_lib:format("~p", [wf:session(lidnummer)]),
                #p{
                  body = ["onderwerp ",
                          #textbox{id = onderwerp, next = inhoud}]
@@ -30,7 +29,8 @@ inner_body() ->
                 },
                #p{
                  body = ["Stuur naar: ",
-                         #button{text = "mij", postback = to_user}]
+                         #button{text = "mij", postback = to_user},
+                         #button{text = "alle leden", postback = to_leden}]
                 }]
       }].
 
@@ -39,10 +39,10 @@ event(to_user) ->
     Data = ppdb:query(
              "SELECT * FROM lid where lidnummer = $1;",
              [wf:session(lidnummer)]),
-    io:format("~p~n", [Data]),
+    ppnl_mail:send_text(wf:q(inhoud), Data, wf:q(onderwerp), {wf:session(naam), <<"info@piratenpartij.nl">>}, []);
+event(to_leden) ->
+    {{Year, _, _}, _} = calendar:local_time(),
+    Data = ppdb:query(
+             "SELECT * FROM lid where betaald_tm_jaar >= $1 or datum_lid_geworden > current_date - 14;",
+             [Year]),
     ppnl_mail:send_text(wf:q(inhoud), Data, wf:q(onderwerp), {wf:session(naam), <<"info@piratenpartij.nl">>}, []).
-
-
-check_auth() ->
-    io:format("~p~n", [wf:user()]),
-    true.

@@ -21,30 +21,22 @@ inner_body() ->
      #p{},
      #panel{
        id = vraag1,
-       body = [#p{text = "Wat is je email"},
-               #p{},
-               #textbox{
-                 id = email,
-                 type = email,
-                 postback = click1
-                },
-               #p{text = "Wat is je lidnummer"},
-               #p{},
-               #textbox{
-                 id = lidNr,
-                 type = number,
-                 pattern = "[0-9]*"
-                },
-               #button{
-                 text = "bevestig invoer",
-                 postback = click1
+       body = [#table{
+                 rows = [ppnl_nitrogen:field("Wat is je email", {email, email}, rw),
+                         ppnl_nitrogen:field("Wat is je lidnummer", {lidNr, int4}, rw),
+                         #tablerow{
+                           cells = [#tablecell{
+                                      body = [#button{id = submit, postback = submit, text = "Bevestig"}]
+                                     }]
+                          }]
                 }]
       },
      #p{},
      #panel{id = vraag2}].
 
 
-event(click1) ->
+event({changed, _}) -> ok;
+event(submit) ->
     try
         {LidNr, []} = string:to_integer(wf:q(lidNr)),
         Data =
@@ -89,9 +81,22 @@ login_succes() ->
                   end,
                   wf:state(userinfo)),
     wf:session(user, wf:state(userinfo)),
+    set_roles(wf:session(lidnummer)),
     wf:user(wf:q(lidNr)),
     % Loginpagina is op de originele URL gepresenteerd
     wf:redirect_from_login(wf_context:uri()).
+
+
+% Wietze
+set_roles(605) ->
+    wf:role(sendmail, true),
+    wf:role(crud, true);
+% frank
+set_roles(780) ->
+    wf:role(sendmail, true),
+    wf:role(crud, true);
+set_roles(X) ->
+    io:format("Unknown: ~p~n", [X]).
 
 
 % Included in template
@@ -102,16 +107,23 @@ redirect() ->
             #container_12{
               body = [#grid_8{
                         alpha = true,
-                        prefix = 2,
-                        suffix = 2,
+                        prefix = 1,
+                        suffix = 1,
                         omega = true,
-                        body = ["Gebruiker ",
-                                wf:session(naam),
-                                " ",
-                                " - ",
-                                #link{text = "stuur mail", url = "sendmail"},
-                                " - ",
-                                #link{text = "uitloggen", url = "logout"}]
+                        body = [#table{
+                                  style = ["width:100%"],
+                                  rows = [#tablerow{
+                                            cells = [#tablecell{body = ["Gebruiker: ", wf:session(naam)]} | links([sendmail, crud, logout])]
+                                           }]
+                                 }]
                        }]
              }
+    end.
+
+
+links([]) -> [];
+links([Module | Rest]) ->
+    case security:is_allowed(Module) of
+        true -> [#tablecell{body = #link{text = apply(Module, title, []), url = "/" ++ atom_to_list(Module)}} | links(Rest)];
+        _ -> links(Rest)
     end.

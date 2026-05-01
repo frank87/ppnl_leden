@@ -2,7 +2,7 @@
 -export([fullname/3, send_template/5, send_text/5, merge/3, record_to_env/2, test/0]).
 
 
-fullname(A, <<"">>, B) -> io_lib:format("~s ~s", [A, B]);
+fullname(A, null, B) -> io_lib:format("~s ~s", [A, B]);
 fullname(A, B, C) -> io_lib:format("~s ~s ~s", [A, B, C]).
 
 
@@ -44,7 +44,8 @@ send_record(Template, Headers, Record, Subject, From, ExtraData) ->
     io:format("~p\n", [Mime]),
     {_, FromMail} = From,
     {ok, MailConfig} = application:get_env(ppnl_leden, mailconfig),
-    gen_smtp_client:send_blocking({FromMail, [Email], Mime}, MailConfig).
+    %gen_smtp_client:send_blocking({FromMail, [Email], Mime}, MailConfig).
+    ok.
 
 
 test() ->
@@ -62,6 +63,7 @@ test() ->
 
 
 merge([], [], Data) -> Data;
-merge(D1, [null | D2], Data) -> merge(D1, [<<"">> | D2], Data);
+merge([{D, _} | R], D2, Data) -> merge([D | R], D2, Data);
+merge(D1, [null | R2], Data) -> merge(D1, [<<"">> | R2], Data);
 merge([D | R], D2, Data) when is_binary(D) -> merge([binary_to_atom(D) | R], D2, Data);
 merge([D1 | R1], [D2 | R2], Data) -> merge(R1, R2, [{D1, D2} | Data]).

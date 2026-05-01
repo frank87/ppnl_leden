@@ -14,7 +14,7 @@
  },
  {simple_bridge,[{handler,nitrogen},
                  {backend,cowboy},
-                 {address,"127.0.0.1"},
+                 {address,"10.0.0.3"},
                  {port,8000},
                  {document_root,"./priv/static"},
                  {static_paths,["js/","css/","images/","nitrogen/",
